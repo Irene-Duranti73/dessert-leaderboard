@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Monday Dessert Leaderboard</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #f5f4f0;
+    color: #1a1a18;
+    min-height: 100vh;
+    padding: 2rem 1rem;
+  }
+
+  .container { max-width: 600px; margin: 0 auto; }
+
+  h1 { font-size: 22px; font-weight: 500; margin-bottom: 4px; }
+  .subtitle { font-size: 13px; color: #5f5e5a; margin-bottom: 1.5rem; }
+
+  .metric-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 1.5rem;
+  }
+  .metric {
+    background: #eeede9;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+  }
+  .metric-label { font-size: 12px; color: #5f5e5a; }
+  .metric-val { font-size: 20px; font-weight: 500; margin-top: 2px; }
+
+  .card {
+    background: #fff;
+    border: 0.5px solid rgba(26,26,24,0.15);
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 10px;
+  }
+
+  .name-section { margin-bottom: 1.5rem; }
+  .section-label { font-size: 13px; font-weight: 500; color: #5f5e5a; margin-bottom: 8px; }
+  .name-row { display: flex; gap: 8px; align-items: center; }
+
+  input[type="text"] {
+    height: 36px;
+    border: 0.5px solid rgba(26,26,24,0.3);
+    border-radius: 8px;
+    padding: 0 10px;
+    font-size: 14px;
+    background: #fff;
+    color: #1a1a18;
+    outline: none;
+    width: 100%;
+    max-width: 220px;
+  }
+  input[type="text"]:focus { border-color: rgba(26,26,24,0.6); }
+
+  button {
+    height: 36px;
+    padding: 0 14px;
+    border: 0.5px solid rgba(26,26,24,0.3);
+    border-radius: 8px;
+    background: #fff;
+    color: #1a1a18;
+    font-size: 14px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  button:hover { background: #f5f4f0; }
+  button:active { transform: scale(0.98); }
+
+  .dessert-row { display: flex; align-items: center; gap: 14px; }
+  .rank { font-size: 18px; font-weight: 500; min-width: 26px; text-align: center; color: #888780; }
+  .rank.gold   { color: #BA7517; }
+  .rank.silver { color: #888780; }
+  .rank.bronze { color: #993C1D; }
+
+  .dinfo { flex: 1; min-width: 0; }
+  .dname { font-size: 15px; font-weight: 500; }
+  .dmeta { font-size: 12px; color: #5f5e5a; margin-top: 2px; }
+
+  .stars { display: flex; gap: 3px; }
+  .star {
+    font-size: 24px;
+    cursor: pointer;
+    color: #ccc;
+    transition: color 0.1s;
+    line-height: 1;
+    user-select: none;
+  }
+  .star.lit    { color: #EF9F27; }
+  .star.locked { cursor: default; }
+
+  .avg-pill {
+    font-size: 12px;
+    font-weight: 500;
+    background: #f5f4f0;
+    border-radius: 8px;
+    padding: 4px 10px;
+    color: #5f5e5a;
+    min-width: 56px;
+    text-align: center;
+  }
+
+  .fav-badge {
+    font-size: 11px;
+    background: #FAEEDA;
+    color: #854F0B;
+    border-radius: 8px;
+    padding: 2px 8px;
+    margin-left: 8px;
+  }
+
+  .divider { border: none; border-top: 0.5px solid rgba(26,26,24,0.12); margin: 10px 0; }
+
+  .voter-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+  .chip {
+    font-size: 11px;
+    background: #f5f4f0;
+    border-radius: 20px;
+    padding: 2px 9px;
+    color: #5f5e5a;
+  }
+
+  .voted-msg { font-size: 11px; color: #5f5e5a; }
+
+  .add-section { margin-top: 1.5rem; }
+  .add-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .status { font-size: 12px; color: #3B6D11; margin-top: 6px; min-height: 18px; }
+
+  .header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1.5rem; }
+  .refresh-btn {
+    font-size: 12px;
+    color: #5f5e5a;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 0;
+    margin-top: 4px;
+  }
+  .refresh-btn:hover { color: #1a1a18; background: none; }
+
+  .name-hint { font-size: 12px; color: #e24b4a; margin-left: 4px; }
+
+  @media (max-width: 480px) {
+    .metric-grid { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+    .metric-val { font-size: 16px; }
+    .star { font-size: 20px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div>
+      <h1>Monday desserts 🍰</h1>
+      <p class="subtitle">Rate each week's treat — one vote per person per dessert</p>
+    </div>
+    <button class="refresh-btn" onclick="load()" aria-label="Refresh">&#8635; refresh</button>
+  </div>
+
+  <div class="card name-section">
+    <div class="section-label">Who are you?</div>
+    <div class="name-row">
+      <input type="text" id="voter-name" placeholder="Your name" maxlength="30" />
+      <span class="name-hint" id="name-hint"></span>
+    </div>
+  </div>
+
+  <div class="metric-grid">
+    <div class="metric"><div class="metric-label">Desserts</div><div class="metric-val" id="m-count">—</div></div>
+    <div class="metric"><div class="metric-label">Total votes</div><div class="metric-val" id="m-votes">—</div></div>
+    <div class="metric"><div class="metric-label">Overall avg</div><div class="metric-val" id="m-avg">—</div></div>
+  </div>
+
+  <div id="dessert-list"></div>
+
+  <div class="add-section">
+    <div class="card">
+      <div class="section-label" style="margin-bottom:8px;">Add next week's dessert</div>
+      <div class="add-row">
+        <input type="text" id="new-name" placeholder="e.g. Tiramisù" maxlength="40" />
+        <input type="text" id="new-week" placeholder="Week 4" maxlength="20" style="max-width:90px;" />
+        <button onclick="addDessert()">Add +</button>
+      </div>
+      <div class="status" id="add-status"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const STORAGE_KEY = 'dessert-lb-v1';
+
+const DEFAULT = [
+  { id: 'd1', name: 'Crostata alle fragole', week: 'Week 1', votes: {} },
+  { id: 'd2', name: 'Chocolate muffins',     week: 'Week 2', votes: {} },
+  { id: 'd3', name: 'Snickerdoodles',         week: 'Week 3', votes: {} },
+];
+
+let desserts = [];
+let hoverState = {};
+
+function save() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(desserts)); } catch(e) {}
+}
+
+function load() {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    desserts = stored ? JSON.parse(stored) : DEFAULT;
+  } catch(e) {
+    desserts = DEFAULT;
+  }
+  render();
+}
+
+function voterName() {
+  return document.getElementById('voter-name').value.trim();
+}
+
+function avg(votes) {
+  const vals = Object.values(votes);
+  if (!vals.length) return null;
+  return vals.reduce((a, b) => a + b, 0) / vals.length;
+}
+
+function castVote(dIdx, stars) {
+  const name = voterName();
+  if (!name) {
+    document.getElementById('name-hint').textContent = 'Please enter your name first';
+    document.getElementById('voter-name').focus();
+    return;
+  }
+  document.getElementById('name-hint').textContent = '';
+  const d = desserts[dIdx];
+  if (d.votes[name] !== undefined) return;
+  d.votes[name] = stars;
+  save();
+  render();
+}
+
+function addDessert() {
+  const name = document.getElementById('new-name').value.trim();
+  const week = document.getElementById('new-week').value.trim();
+  if (!name) return;
+  desserts.push({
+    id: 'd' + Date.now(),
+    name,
+    week: week || 'Week ' + (desserts.length + 1),
+    votes: {}
+  });
+  document.getElementById('new-name').value = '';
+  document.getElementById('new-week').value = '';
+  document.getElementById('add-status').textContent = '✓ Added!';
+  setTimeout(() => { document.getElementById('add-status').textContent = ''; }, 2000);
+  save();
+  render();
+}
+
+function sorted() {
+  return desserts.map((d, i) => ({ ...d, origIdx: i, a: avg(d.votes) }))
+    .sort((a, b) => {
+      if (a.a === null && b.a === null) return a.origIdx - b.origIdx;
+      if (a.a === null) return 1;
+      if (b.a === null) return -1;
+      return b.a - a.a || a.origIdx - b.origIdx;
+    });
+}
+
+function render() {
+  const voter = voterName();
+  const items = sorted();
+  const ranked = items.filter(d => d.a !== null);
+  const maxAvg = ranked.length ? ranked[0].a : null;
+  const allVotes = desserts.flatMap(d => Object.values(d.votes));
+  const totalVotes = allVotes.length;
+  const overallAvg = totalVotes
+    ? (allVotes.reduce((a, b) => a + b, 0) / totalVotes).toFixed(1)
+    : '—';
+
+  document.getElementById('m-count').textContent = desserts.length;
+  document.getElementById('m-votes').textContent = totalVotes;
+  document.getElementById('m-avg').textContent = totalVotes ? overallAvg + ' ★' : '—';
+
+  const list = document.getElementById('dessert-list');
+  list.innerHTML = items.map((d, rank) => {
+    const a = d.a;
+    const isTop = a !== null && a === maxAvg && ranked.length > 1;
+    const rankLabel = a === null ? '—' : rank + 1;
+    const rankClass = rank === 0 && a !== null ? 'gold'
+                    : rank === 1 && a !== null ? 'silver'
+                    : rank === 2 && a !== null ? 'bronze' : '';
+    const myVote = voter ? d.votes[voter] : undefined;
+    const voted = myVote !== undefined;
+    const hov = hoverState[d.origIdx] || 0;
+
+    const starHTML = [1, 2, 3, 4, 5].map(s => {
+      const lit = voted ? s <= myVote : (hov ? s <= hov : false);
+      const lockedClass = voted ? 'locked' : '';
+      const events = voted ? '' :
+        `onmouseenter="hoverState[${d.origIdx}]=${s}; render();"
+         onmouseleave="hoverState[${d.origIdx}]=0; render();"
+         onclick="castVote(${d.origIdx},${s})"`;
+      return `<span class="star ${lit ? 'lit' : ''} ${lockedClass}" ${events}>★</span>`;
+    }).join('');
+
+    const voterEntries = Object.entries(d.votes);
+    const chipHTML = voterEntries.map(([name, rating]) =>
+      `<span class="chip">${name} ${'★'.repeat(rating)}</span>`
+    ).join('');
+
+    const avgText = a !== null ? a.toFixed(1) + ' ★' : 'no votes yet';
+    const voteCountText = voterEntries.length
+      ? `${voterEntries.length} vote${voterEntries.length !== 1 ? 's' : ''}`
+      : 'be the first to vote';
+    const votedMsg = voted
+      ? `<div class="voted-msg">your vote: ${'★'.repeat(myVote)}</div>`
+      : '';
+
+    return `<div class="card">
+      <div class="dessert-row">
+        <div class="rank ${rankClass}">${rankLabel}</div>
+        <div class="dinfo">
+          <div class="dname">${d.name}${isTop ? `<span class="fav-badge">crowd favourite</span>` : ''}</div>
+          <div class="dmeta">${d.week} &middot; ${voteCountText}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+          <div class="stars">${starHTML}</div>
+          <div class="avg-pill">${avgText}</div>
+          ${votedMsg}
+        </div>
+      </div>
+      ${voterEntries.length ? `<hr class="divider"><div class="voter-chips">${chipHTML}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+document.getElementById('voter-name').addEventListener('input', render);
+load();
+</script>
+</body>
+</html>
